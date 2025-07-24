@@ -48,15 +48,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         List<ItemRequest> requests = itemRequestRepository.findByRequesterIdOrderByCreatedDesc(userId);
-        return requests.stream()
-                .map(request -> {
-                    List<Item> items = itemRepository.findByRequestId(request.getId());
-                    List<ItemDto> itemDtos = items.stream()
-                            .map(ItemMapper::toItemDto)
-                            .collect(Collectors.toList());
-                    return ItemRequestMapper.toItemRequestDto(request, itemDtos);
-                })
-                .collect(Collectors.toList());
+        return mapRequestsToDtos(requests);
     }
 
     @Override
@@ -67,15 +59,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         Pageable pageable = PageRequest.of(from / size, size);
         List<ItemRequest> requests = itemRequestRepository.findByRequesterIdNotOrderByCreatedDesc(userId, pageable);
 
-        return requests.stream()
-                .map(request -> {
-                    List<Item> items = itemRepository.findByRequestId(request.getId());
-                    List<ItemDto> itemDtos = items.stream()
-                            .map(ItemMapper::toItemDto)
-                            .collect(Collectors.toList());
-                    return ItemRequestMapper.toItemRequestDto(request, itemDtos);
-                })
-                .collect(Collectors.toList());
+        return mapRequestsToDtos(requests);
     }
 
     @Override
@@ -92,5 +76,17 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .collect(Collectors.toList());
 
         return ItemRequestMapper.toItemRequestDto(request, itemDtos);
+    }
+
+    private List<ItemRequestDto> mapRequestsToDtos(List<ItemRequest> requests) {
+        return requests.stream()
+                .map(request -> {
+                    List<Item> items = itemRepository.findByRequestId(request.getId());
+                    List<ItemDto> itemDtos = items.stream()
+                            .map(ItemMapper::toItemDto)
+                            .collect(Collectors.toList());
+                    return ItemRequestMapper.toItemRequestDto(request, itemDtos);
+                })
+                .collect(Collectors.toList());
     }
 }

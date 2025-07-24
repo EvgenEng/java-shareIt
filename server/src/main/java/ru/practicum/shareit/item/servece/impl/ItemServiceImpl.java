@@ -66,16 +66,7 @@ public class ItemServiceImpl implements ItemService {
 
         if (Objects.equals(item.getOwner().getId(), userId)) {
             LocalDateTime now = LocalDateTime.now();
-
-            List<Booking> lastBookings = bookingRepository.findByItemIdAndEndBeforeOrderByEndDescAllStatuses(
-                    itemId, now, Pageable.ofSize(1));
-            Booking lastBooking = lastBookings.isEmpty() ? null : lastBookings.get(0);
-
-            List<Booking> nextBookings = bookingRepository.findByItemIdAndStartAfterOrderByStartAscAllStatuses(
-                    itemId, now, Pageable.ofSize(1));
-            Booking nextBooking = nextBookings.isEmpty() ? null : nextBookings.get(0);
-
-            return ItemMapper.toItemWithBookingDto(item, lastBooking, nextBooking, commentDtos);
+            return getItemWithBookings(item, commentDtos, now);
         } else {
             return ItemMapper.toItemWithBookingDto(item, null, null, commentDtos);
         }
@@ -170,16 +161,7 @@ public class ItemServiceImpl implements ItemService {
 
         if (item.getOwner().getId().equals(userId)) {
             LocalDateTime now = LocalDateTime.now();
-
-            List<Booking> lastBookings = bookingRepository.findByItemIdAndEndBeforeOrderByEndDescAllStatuses(
-                    item.getId(), now, Pageable.ofSize(1));
-            Booking lastBooking = lastBookings.isEmpty() ? null : lastBookings.get(0);
-
-            List<Booking> nextBookings = bookingRepository.findByItemIdAndStartAfterOrderByStartAscAllStatuses(
-                    item.getId(), now, Pageable.ofSize(1));
-            Booking nextBooking = nextBookings.isEmpty() ? null : nextBookings.get(0);
-
-            return ItemMapper.toItemWithBookingDto(item, lastBooking, nextBooking, comments);
+            return getItemWithBookings(item, comments, now);
         }
 
         return ItemMapper.toItemWithBookingDto(item, null, null, comments);
@@ -197,22 +179,24 @@ public class ItemServiceImpl implements ItemService {
 
         return items.stream()
                 .map(item -> {
-                    Long itemId = item.getId();
-
-                    List<Comment> comments = commentRepository.findByItemId(itemId);
+                    List<Comment> comments = commentRepository.findByItemId(item.getId());
                     List<CommentDto> commentDtos = comments.stream()
                             .map(CommentMapper::toCommentDto)
                             .collect(Collectors.toList());
-
-                    List<Booking> lastBookings = bookingRepository.findByItemIdAndEndBeforeOrderByEndDescAllStatuses(
-                            itemId, now, Pageable.ofSize(1));
-                    Booking lastBooking = lastBookings.isEmpty() ? null : lastBookings.get(0);
-                    List<Booking> nextBookings = bookingRepository.findByItemIdAndStartAfterOrderByStartAscAllStatuses(
-                            itemId, now, Pageable.ofSize(1));
-                    Booking nextBooking = nextBookings.isEmpty() ? null : nextBookings.get(0);
-
-                    return ItemMapper.toItemWithBookingDto(item, lastBooking, nextBooking, commentDtos);
+                    return getItemWithBookings(item, commentDtos, now);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private ItemWithBookingDto getItemWithBookings(Item item, List<CommentDto> commentDtos, LocalDateTime now) {
+        List<Booking> lastBookings = bookingRepository.findByItemIdAndEndBeforeOrderByEndDescAllStatuses(
+                item.getId(), now, Pageable.ofSize(1));
+        Booking lastBooking = lastBookings.isEmpty() ? null : lastBookings.get(0);
+
+        List<Booking> nextBookings = bookingRepository.findByItemIdAndStartAfterOrderByStartAscAllStatuses(
+                item.getId(), now, Pageable.ofSize(1));
+        Booking nextBooking = nextBookings.isEmpty() ? null : nextBookings.get(0);
+
+        return ItemMapper.toItemWithBookingDto(item, lastBooking, nextBooking, commentDtos);
     }
 }
